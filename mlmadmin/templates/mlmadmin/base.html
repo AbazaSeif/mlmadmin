@@ -1,0 +1,315 @@
+{% load url from future %}
+<!DOCTYPE HTML>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="">
+  <meta name="author" content="">
+  <title>Mailing List Management{% if settings.COMPANY_NAME|length > 0 %} | {{ settings.COMPANY_NAME }}{% endif %}</title>
+
+  <!-- styles -->
+  <link href="{{ MEDIA_URL }}bootstrap/css/bootstrap-{{ settings.BOOTSTRAP_THEME }}.min.css" rel="stylesheet">
+  <link href="{{ MEDIA_URL }}css/styles-{{ settings.BOOTSTRAP_THEME }}.css" rel="stylesheet">
+
+  <!--[if lt IE 9]>
+    <script src="//html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+
+</head>
+
+<body>
+
+<div class="modal fade" id="cleanModal">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header-warning">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        <h4 class="modal-title">
+              <span class="glyphicon glyphicon-trash" aria-hidden="true"></span>
+              <span class="sr-only">Trash</span>
+        </h4>
+      </div>
+      <div class="modal-body text-center" id="msg-clean">
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">No, thanks</button>
+        <button type="button" class="btn btn-danger" id="clean_btn">Yes, clean bounces</button>
+      </div>
+    </div><!-- /.modal-content -->
+  </div><!-- /.modal-dialog -->
+</div><!-- /.modal -->
+
+<div class="wrapper">
+
+  <header class="header">
+
+    <nav class="navbar navbar-default">
+      <div class="container-fluid">
+        <!-- Brand and toggle get grouped for better mobile display -->
+        <div class="navbar-header">
+          <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-navbar-collapse-1" aria-expanded="false">
+            <span class="sr-only">Select ML</span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+          <div id="mlmbrand">
+            <a class="navbar-brand hidden-md" href="{% url 'main_current' object_id=current_mlm %}">
+              {% if current_mlm %}
+                <span class="glyphicon glyphicon-envelope" aria-hidden="true"></span>
+                <span class="sr-only">Brand:</span>
+                {{ current_mlm|upper }}
+              {% elif request.path == '/mlmadmin/help' %}
+                <span class="glyphicon glyphicon glyphicon-arrow-left" aria-hidden="true"></span>
+                <span class="sr-only">Back:</span>
+                back to lists
+              {% endif %}
+            </a>
+          </div>
+        </div>
+
+        <!-- Collect the nav links, forms, and other content for toggling -->
+        <div class="collapse navbar-collapse" id="bs-navbar-collapse-1">
+      {% if current_mlm %}
+          <ul class="nav navbar-nav">
+            <li class="dropdown">
+              <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Select ML <span class="caret"></span></a>
+              <ul class="dropdown-menu">
+                {% for mlm in groups|dictsort:"name" %}
+                  <li><a href="{% url 'main_current' object_id=mlm.name %}">{{ mlm.name }}</a></li>
+                {% endfor %}
+              </ul>
+            </li>
+            <li>
+              <a href="{% url 'add' object_id=current_mlm %}">
+              <span class="glyphicon glyphicon-plus" aria-hidden="true"></span>
+              <span class="sr-only">Add:</span>
+              Add subscribers
+              </a>
+            </li>
+            <li><a href="{% url 'moderation' object_id=current_mlm %}">Moderate tasks <span class="badge">{{ mtasks }}</span></a></li>
+            <li class="dropdown">
+              <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Bounces <span class="caret"></span></a>
+              <ul class="dropdown-menu">
+                <li>
+                  <a href="{% url 'bounce' object_id=current_mlm %}">
+                    <span class="glyphicon glyphicon-list" aria-hidden="true"></span>
+                    <span class="sr-only">List:</span>
+                    List
+                  </a>
+                </li>
+                <li>
+                  <a data-toggle="modal" data-target="#cleanModal" href="#">
+                    <span class="glyphicon glyphicon-trash" style="color:#d9534f" aria-hidden="true"></span>
+                    <span class="sr-only">CleanUp:</span>
+                    CleanUp
+                  </a>
+                </li>
+              </ul>
+            </li>
+            {% if is_staff %}
+              <li><a href="{% url 'dump' object_id=current_mlm %}">Dump list</a></li>
+            {% endif %}
+            <li><a href="{% url 'compose' object_id=current_mlm %}">Compose</a></li>
+          </ul>
+          <form class="navbar-form navbar-left" role="search" action="{% url 'search' object_id=current_mlm %}" method="post">
+            <span class="glyphicon glyphicon-search" style="color:#fff" aria-hidden="true"></span>
+            <span class="sr-only">Search:</span>
+            {% csrf_token %}
+            <div class="form-group">
+              <input type="text" name="s" class="form-control" placeholder="Search" data-toggle="tooltip" data-placement="bottom" title="Search, change or delete subscribers">
+              <input type="hidden" name="mlm" value="{{ current_mlm }}">
+            </div>
+          </form>
+      {% endif %}
+          <ul class="nav navbar-nav navbar-right">
+      {% if current_mlm %}
+            <li class="dropdown">
+              <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
+                <span class="glyphicon glyphicon-user" aria-hidden="true"></span>
+                <span class="sr-only">User:</span>
+                <font style="font-weight: bold;">{{ user.username }}</font><span class="caret"></span>
+              </a>
+              <ul class="dropdown-menu">
+                <li>
+                  <a href="{% url 'help' %}">
+                    <span class="glyphicon glyphicon-question-sign" aria-hidden="true"></span>
+                    <span class="sr-only">Help:</span>
+                    Help
+                  </a>
+                </li>
+                {% if not settings.AUTH_USE_KERBEROS %}
+                <li role="separator" class="divider"></li>
+                <li>
+                  <a href="{% url 'signout' %}">
+                    <span class="glyphicon glyphicon-log-out" style="color:#d9534f" aria-hidden="true"></span>
+                    <span class="sr-only">Sign out:</span>
+                    Sign out
+                  </a>
+                </li>
+                {% endif %}
+              </ul>
+            </li>
+      {% elif settings.AUTH_USE_KERBEROS %}
+        {% if request.path != '/mlmadmin/help' %}
+            <li><a href="{% url 'redirect' %}" font style="font-weight: bold;">Sign in locally</a></li>
+        {% endif %}
+      {% else %}
+            <li>
+              <a href="{% url 'signout' %}" font style="font-weight: bold;">
+                <span class="glyphicon glyphicon-log-out" aria-hidden="true"></span>
+                <span class="sr-only">Sign out:</span>
+                Sign out
+              </a>
+            </li>
+          </ul>
+      {% endif %}
+        </div><!-- /.navbar-collapse -->
+      </div><!-- /.container-fluid -->
+    </nav>
+
+  </header><!-- .header-->
+
+  <main class="content">
+
+    <div class="container">
+      {% if messages %}
+        {% for message in messages %}
+          {% if message.tags == 'error' %}
+            <div class="alert alert-danger alert-dismissible" role="alert">
+              <span class="glyphicon glyphicon-exclamation-sign" aria-hidden="true"></span>
+              <span class="sr-only">Error:</span>
+          {% elif message.tags == 'warning' %}
+            <div class="alert alert-warning alert-dismissible" role="alert">
+              <span class="glyphicon glyphicon-exclamation-sign" aria-hidden="true"></span>
+              <span class="sr-only">Warning:</span>
+          {% else %}
+            <div class="alert alert-success alert-dismissible" role="alert">
+              <span class="glyphicon glyphicon-ok-sign" aria-hidden="true"></span>
+              <span class="sr-only">OK:</span>
+          {% endif %}
+              {{ message }}
+              <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+            </div>
+        {% endfor %}
+      {% endif %}
+
+      {% block content %}
+      {% endblock %}
+    </div>
+
+  </main><!-- .content -->
+
+</div><!-- .wrapper -->
+
+<footer class="footer">
+
+  <div class="navbar navbar-inverse">
+      <div class="container-fluid">
+        <a class="navbar-text pull-left"><span class="badge badge-product">MLMAdmin {{ settings.MLMADMIN_VERSION }}</span></a>
+        <a class="navbar-text pull-right">Mailing List Management{% if settings.COMPANY_NAME|length > 0 %} | <font: style="font-weight: bold;">{{ settings.COMPANY_NAME }}</font>{% endif %}</a>
+      </div>
+  </div>
+
+</footer><!-- .footer -->
+
+<!-- javascript
+================================================== -->
+<!-- Placed at the end of the document so the pages load faster -->
+<script src="{{ MEDIA_URL }}bootstrap/js/jquery.min.js"></script>
+<script src="{{ MEDIA_URL }}bootstrap/js/bootstrap.min.js"></script>
+<script>
+
+  $(function () {
+    $('[data-toggle="tooltip"]').tooltip()
+    $('[data-toggle="popover"]').popover()
+    $('#clean_btn').click(function() {
+      $('#cleanModal').modal('hide');
+      $.post('/mlmadmin/{{ current_mlm }}/bounce',{'cleanup':'ok',csrfmiddlewaretoken: '{{ csrf_token }}'});
+    });
+  })
+
+  $('#cleanModal').on('show.bs.modal', function(){
+    $('#msg-clean').html('This will clean bounce messages');
+  });
+
+  $(".navbar-search").bind("submit", function()
+  {
+    var s=$('.search-query').val();
+    if (s.length>3){
+      return true;
+    }
+    else{
+      $(this).addclass('alert-error');
+      return false;
+    }
+  })
+
+  $(".collapse").bind('show', function()
+  {
+    id = $(this).attr('id');
+
+    fname=$('table #tr'+id +'> td a').attr('id');
+    $.post('/mlmadmin/{{ current_mlm }}/bounce',{action:'show',fname:fname,csrfmiddlewaretoken: '{{ csrf_token }}'}, function(data) {
+      $('#'+id).html(data);
+    });
+  });
+
+  $('.btn-success').click(function(){
+
+    id = $(this).attr('id');
+    from = $('table #'+id +'> td.from').text();
+    $.post('/mlmadmin/{{ current_mlm }}/moderation',{action:'release',id:id,from:from,csrfmiddlewaretoken: '{{ csrf_token }}'}, function(data) {
+      $('#'+id).html(data);
+  });
+
+    $('table #'+id).hide();
+  })
+
+  $('.btn-danger').click(function(){
+
+    id = $(this).attr('id');
+    from = $('table #'+id +'> td.from').text();
+    $.post('/mlmadmin/{{ current_mlm }}/moderation',{action:'reject',id:id,from:from,csrfmiddlewaretoken: '{{ csrf_token }}'}, function(data) {
+      $('.result').html(data);
+    });
+
+    $('table #'+id).hide();
+  })
+
+  $(".modal-toggle").click(function(){
+    id=$(this).attr('id');
+    $.post('/mlmadmin/{{ current_mlm }}/moderation',{action:'getmessagebody',id:id,csrfmiddlewaretoken: '{{ csrf_token }}'}, function(data) {
+      var obj = JSON.parse(data);
+      $('.modal-body').html(obj.body);
+      var attach = obj.attachments;
+      $("#attachments").html('');
+      for ( i in attach ) {
+        $("#attachments").append("<p><span class='glyphicon glyphicon-paperclip' style='color:#888''></span>"+attach[i].filename+"</p>");
+      }
+    $("#subject").html(obj.subject);
+  });
+     $('#myModal').modal('toggle');
+  });
+
+  $(".modal-toggle-bounce").click(function(){
+    var id=$(this).attr('id');
+    $.post('/mlmadmin/{{ current_mlm }}/bounce',{id:id,csrfmiddlewaretoken: '{{ csrf_token }}'}, function(data) {
+
+      var obj = JSON.parse(data);
+      $('.modal-body').html(obj.body);
+      var attach = obj.attachments;
+      $("#attachments").html('');
+      for ( i in attach ) {
+        $("#attachments").append("<p><span class='glyphicon glyphicon-paperclip' style='color:#888''></span>"+attach[i].filename+"</p>");
+      }
+      $("#subject").html(obj.subject);
+    });
+    $('#myModal').modal('toggle');
+  });
+
+</script>
+</body>
+</html>

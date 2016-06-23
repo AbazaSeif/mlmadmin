@@ -1,0 +1,111 @@
+{% extends "mlmadmin/base.html" %}
+{% load url from future %}
+{% block content %}
+
+<div class="container">
+  <dl>
+    <dt>About</dt>
+      <dd>
+        MLMAdmin is a web application designed to facilitate work with the mass mailing system
+          <a data-toggle="tooltip" data-placement="bottom" title="Mailing List Management Made Joyful" href="http://mlmmj.org/">mlmmj</a>.
+      </dd>
+
+    <dt>Help on Web Interface</dt>
+
+      <dd>
+        <p>Please hover over the elements of the web interface below to see help messages.</p>
+
+        <nav class="navbar navbar-inverse">
+          <div class="container-fluid">
+            <!-- Brand and toggle get grouped for better mobile display -->
+            <div class="navbar-header">
+              <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-navbar-collapse-help" aria-expanded="false">
+                <span class="sr-only">Select ML</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+              </button>
+              <div data-toggle="popover" data-trigger="hover" data-placement="top" data-content="Name of the current mailing list">
+                <a class="navbar-brand" href="#">
+                  <span class="glyphicon glyphicon-envelope" aria-hidden="true"></span>
+                    <span class="sr-only">Brand:</span>
+                    LIST1
+                </a>
+              </div>
+            </div>
+
+            <!-- Collect the nav links, forms, and other content for toggling -->
+            <div class="collapse navbar-collapse" id="bs-navbar-collapse-help">
+              <ul class="nav navbar-nav">
+                <li class="dropdown" data-toggle="popover" data-trigger="hover" data-placement="top" data-content="Select from the dropdown menu the mailing lists you are entitled to moderate.">
+                  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Select ML <span class="caret"></span></a>
+                </li>
+                <li data-toggle="popover" data-trigger="hover" data-placement="top" data-content="Add subscribers to the current mailing list. The button 'Save changes' adds new emails to the existing list, the button 'Delete and Save changes' deletes the existing list and creates a new one from the given emails.">
+                  <a href="#">
+                  <span class="glyphicon glyphicon-plus" aria-hidden="true"></span>
+                  <span class="sr-only">Add:</span>
+                  Add subscribers
+                  </a>
+                </li>
+                <li data-toggle="popover" data-trigger="hover" data-placement="top" data-content="Moderate tasks for the current mailing list. The options are 'Start sending' and 'Delete task'.">
+                  <a href="#">Moderate tasks <span class="badge">2</span></a>
+                </li>
+                <li class="dropdown" data-toggle="popover" data-trigger="hover" data-placement="top" data-content="Bounce messages from the recipient's mailing systems.">
+                  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Bounces <span class="caret"></span></a>
+                  <ul class="dropdown-menu">
+                    <li data-toggle="popover" data-trigger="hover" data-placement="right" data-content="this shows a list of all the bounce messages for the current mailing list.">
+                      <a href="#">
+                        <span class="glyphicon glyphicon-list" aria-hidden="true"></span>
+                        <span class="sr-only">List:</span>
+                        List
+                      </a>
+                    </li>
+                    <li data-toggle="popover" data-trigger="hover" data-placement="right" data-content="this cleans up all the bounce messages for the current mailing list.">
+                      <a href="#">
+                        <span class="glyphicon glyphicon-trash" style="color:#d9534f" aria-hidden="true"></span>
+                        <span class="sr-only">CleanUp:</span>
+                        CleanUp
+                      </a>
+                    </li>
+                  </ul>
+                </li>
+                <li data-toggle="popover" data-trigger="hover" data-placement="top" data-content="Dump the current list of subscribers as a CSV file. This option is available only for the staff only users.">
+                  <a href="#">Dump list</a>
+                </li>
+                <li data-toggle="popover" data-trigger="hover" data-placement="top" data-content="Compose a task in a web form and send it to moderation.">
+                  <a href="#">Compose</a>
+                </li>
+              </ul>
+              <form class="navbar-form navbar-left" role="search" action="#">
+                <span class="glyphicon glyphicon-search" style="color:#fff" aria-hidden="true"></span>
+                <span class="sr-only">Search:</span>
+                <div class="form-group">
+                  <input type="text" class="form-control" placeholder="Search" data-toggle="popover" data-trigger="hover" data-placement="top" data-content="Search subscribers of the current mailing list and then, if needed, change or delete some of them.">
+                </div>
+              </form>
+            </div><!-- /.navbar-collapse -->
+          </div><!-- /.container-fluid -->
+        </nav>
+      
+      </dd>
+
+    <dt>Limitations</dt>
+      <dd>
+        <li>
+          The mass mailing system <a data-toggle="tooltip" data-placement="bottom" title="Mailing List Management Made Joyful" href="http://mlmmj.org/">mlmmj</a>
+          accepts email messages where the email address of the mailing list is in the fields 'To' or 'Cc'.
+          If the email address of the mailing list is the field 'Bcc' the system sends an email message with an explanation.
+        </li>
+        <li>
+          If you intend to make changes in the list of subscribers of a mailing list while a task for the mailing list is in progress, the MLMAdmin will give you such a warning:
+          <div class="alert alert-warning" id="help_alert" role="alert">
+          <span class="glyphicon glyphicon-exclamation-sign" aria-hidden="true"></span>
+          <span class="sr-only">Warning:</span>
+          An active task is in progress, please wait.
+          </div>
+          This helps avoid changes in the list of subscribers for running tasks.
+        </li>
+      </dd>
+  </dl>
+</div>
+{% endblock %}

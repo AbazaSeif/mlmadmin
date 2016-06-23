@@ -1,0 +1,5 @@
+cert/*
+static/*
+venv/*
+secret.txt
+*.pyc

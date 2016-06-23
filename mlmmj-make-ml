@@ -1,0 +1,194 @@
+#!/bin/sh
+#
+# mlmmj-make-ml - henne@hennevogel.de
+# modified for mlmadmin
+
+VERSION="0.1"
+DEFAULTDIR="/var/spool/mlmmj"
+ALIASFILE=/tmp/aliases-mlmmj
+
+USAGE="mlmmj-make-ml $VERSION
+$0
+             [-h] [-L listname] [-s spooldir] [-a] [-c user] [-z]
+ -h: display this help text
+ -L: the name of the mailing list
+ -s: your spool directory (default $DEFAULTDIR)
+ -a: create the needed entries in your $ALIASFILE file
+ -c: user to chown the spool directory to (default not to chown at all)
+ -z: do nothing for now
+"
+
+while getopts ":hL:s:azc:D:o:t:d" Option
+do
+case "$Option" in 
+	h )
+	echo "$USAGE"
+	exit 0
+	;;
+	z )
+	echo -n "nothing"
+	exit 0
+	;;
+	L )
+	LISTNAME="$OPTARG"
+	;;
+	s )
+	SPOOLDIR="$OPTARG"
+	;;
+	a )
+	A_CREATE="YES"
+	;;
+	c )
+	DO_CHOWN=1
+	CHOWN="$OPTARG"
+	;;
+	D )
+	FQDN="$OPTARG"
+	;;
+	o )
+	OWNER="$OPTARG"
+	;;
+	t )
+	TEXTPATHDEF="$OPTARG"
+	;;
+	d )
+	DEBUG="YES"
+	;;
+	* )
+	echo "$0: invalid option"
+	echo "Try $0 -h for more information."
+	exit 1
+esac
+done
+SHIFTVAL=$((OPTIND-1))
+shift $SHIFTVAL
+
+if [ -z "$SPOOLDIR" ]; then
+	SPOOLDIR="$DEFAULTDIR"
+fi
+
+if [ -n "$DEBUG" ]; then
+	echo "Creating Directorys below $SPOOLDIR. Use '-s spooldir' to change"
+fi
+
+if [ -z "$LISTNAME" ]; then
+	echo -n "What should the name of the Mailinglist be? [mlmmj-test] : "
+	read LISTNAME
+	if [ -z "$LISTNAME" ]; then
+	LISTNAME="mlmmj-test"
+	fi
+fi
+
+LISTDIR="$SPOOLDIR/$LISTNAME"
+
+mkdir -p $LISTDIR
+
+for DIR in incoming queue queue/discarded archive text subconf unsubconf \
+	   bounce control moderation subscribers.d digesters.d requeue \
+	   nomailsubs.d
+do
+	if [ ! -d "$LISTDIR"/"$DIR" ]; then
+		mkdir "$LISTDIR"/"$DIR"
+	fi
+done
+
+test -f "$LISTDIR"/index || touch "$LISTDIR"/index
+
+touch "$LISTDIR"/"control/closedlist"
+echo "To:" > "$LISTDIR"/"control/delheaders"
+touch "$LISTDIR"/"control/addtohdr"
+touch "$LISTDIR"/"control/moderated"
+touch "$LISTDIR"/"control/noget"
+touch "$LISTDIR"/"control/noarchive"
+
+if [ -z "$FQDN" ]; then
+	echo -n "The Domain for the List? [] : "
+	read FQDN
+	if [ -z "$FQDN" ]; then
+		FQDN=`domainname -f`
+	fi
+fi
+
+if [ -z "$OWNER" ]; then
+	echo -n "The emailaddress of the list owner? [postmaster] : "
+	read OWNER
+	if [ -z "$OWNER" ]; then
+		OWNER="postmaster"
+	fi
+fi
+echo "$OWNER" > "$LISTDIR"/"control/owner"
+
+if [ -z "$TEXTPATHDEF" ]; then
+	(
+		cd "/usr/share/mlmmj/text.skel"
+		echo
+		echo "For the list texts you can choose between the following languages or"
+		echo "give a absolute path to a directory containing the texts."
+		echo
+		echo "Available languages:"
+		ls
+
+		TEXTPATHDEF=en
+		echo -n "The path to texts for the list? [$TEXTPATHDEF] : "
+		read TEXTPATHIN
+		if [ -z "$TEXTPATHIN" ] ; then
+			TEXTPATH="$TEXTPATHDEF"
+		else
+			TEXTPATH="$TEXTPATHIN"
+		fi
+		if [ ! -d "$TEXTPATH" ]; then
+			echo
+			echo "**NOTE** Could not copy the texts for the list"
+			echo "Please manually copy the files from the listtexts/ directory"
+			echo "in the source distribution of mlmmj."
+			sleep 2
+		else
+			cp "$TEXTPATH"/* "$LISTDIR"/"text"
+		fi
+	)
+else
+	cp "$TEXTPATHDEF"/* "$LISTDIR"/"text"
+fi
+
+LISTADDRESS="$LISTNAME@$FQDN"
+echo "$LISTADDRESS" > "$LISTDIR"/control/"listaddress"
+
+MLMMJRECEIVE=`which mlmmj-receive 2>/dev/null`
+if [ -z "$MLMMJRECEIVE" ]; then
+	MLMMJRECEIVE="/usr/bin/mlmmj-receive"
+fi
+
+MLMMJMAINTD=`which mlmmj-maintd 2>/dev/null`
+if [ -z "$MLMMJMAINTD" ]; then
+	MLMMJMAINTD="/usr/bin/mlmmj-maintd"
+fi
+
+ALIAS="$LISTNAME:  \"|$MLMMJRECEIVE -L $SPOOLDIR/$LISTNAME/\""
+CRONENTRY="0 */2 * * * \"$MLMMJMAINTD -F -L $SPOOLDIR/$LISTNAME/\""
+
+if [ -n "$A_CREATE" ]; then
+	echo "$ALIAS" >> $ALIASFILE
+else
+	if [ -n "$DEBUG" ]; then
+		echo
+		echo "Don't forget to add this to $ALIASFILE:"
+		echo "$ALIAS"
+	fi
+fi
+
+if [ "$DO_CHOWN" ] ; then
+	chown -R $CHOWN $SPOOLDIR/$LISTNAME
+fi
+
+if [ -n "$DEBUG" ]; then
+	echo
+	echo "If you're not starting mlmmj-maintd in daemon mode,"
+	echo "don't forget to add this to your crontab:"
+	echo "$CRONENTRY"
+
+	echo
+	echo " ** FINAL NOTES **
+	1) The mailinglist directory have to be owned by the user running the 
+	mailserver (i.e. starting the binaries to work the list)
+	2) Run newaliases"
+fi

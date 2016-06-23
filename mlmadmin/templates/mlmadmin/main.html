@@ -1,0 +1,20 @@
+{% extends "mlmadmin/base.html" %}
+{% load url from future %}
+{% block content %}
+
+{% if current_mlm and not messages %}
+<div class="alert alert-success text-center" role="alert">
+  <span class="glyphicon glyphicon-info-sign" aria-hidden="true"></span>
+  <span class="sr-only">Info:</span>
+  The email address of this mailing list is <font style="font-weight: bold;">{{ current_mlm }}@{{ settings.COMPANY_MAIL_DOMAIN }}</font>
+</div>
+{% endif %}
+{% if mtasks %}
+<div class="alert alert-info text-center" role="alert">
+  <span class="glyphicon glyphicon-envelope" aria-hidden="true"></span>
+  <span class="sr-only">Tasks:</span>
+  You have <a href="{% url 'moderation' object_id=current_mlm %}" class="alert-link">{{ mtasks }} task{% if mtasks > 1 %}s{% endif %}</a> for moderation
+</div>
+{% endif %}
+
+{% endblock %}

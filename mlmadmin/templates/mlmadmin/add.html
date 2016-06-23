@@ -1,0 +1,31 @@
+{% extends "mlmadmin/base.html" %}
+{% block content %}
+
+{{ form.error }}
+
+<form method="POST">
+  {% csrf_token %}
+  <fieldset>
+    <div class="well well-sm text-center">
+      <span class="glyphicon glyphicon-edit" aria-hidden="true"></span>
+      <span class="sr-only">Edit:</span>
+      Add subscribers to the mailing list <font style="font-weight: bold;">{{ form.mlm.value }}</font>
+    </div>
+    <div class="text-center">
+      <textarea id="input_address" name="address" rows="18"></textarea>
+      <input type="hidden" name="mlm" id="id_mlm" value="{{ form.mlm.value }}">
+    </div>
+    <div class="well well-sm" style="margin-top: 20px">
+      <div class="form-actions text-center">
+          <button data-toggle="tooltip" data-placement="bottom" title="Add email addresses to the current list" type="submit" class="btn btn-primary">
+            Save changes
+          </button>
+          <button data-toggle="tooltip" data-placement="bottom" title="Delete the current list and save email addresses as a new list" type="submit"
+              name="delete_before_store" class="btn btn-danger">Delete and Save changes
+          </button>
+      </div>
+    </div>
+  </fieldset>
+</form>
+
+{% endblock %}

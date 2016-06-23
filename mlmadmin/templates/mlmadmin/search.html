@@ -1,0 +1,35 @@
+{% extends "mlmadmin/base.html" %}
+{% load url from future %}
+{% block content %}
+
+{% if size %}
+  <div class="well well-sm text-center">
+    <span class="glyphicon glyphicon-search" aria-hidden="true"></span>
+    <span class="sr-only">Search:</span>
+    Subscribers of the mailing list <font style="font-weight: bold;">{{ current_mlm }}</font>
+  </div>
+  <form method="POST" action="{% url 'bulk_search' object_id=current_mlm %}">
+    {% csrf_token %}
+    <fieldset>
+      {% for v in r %}
+        <div class="control-group text-center">
+          <div class="controls">
+            <input class="input" value="{{ v.address }}" name="{{ v.id }}" id="{{ v.id }}">
+          </div>
+        </div>
+      {% endfor %}
+      <div class="well well-sm form-actions text-center" style="margin-top: 20px">
+          <input type="hidden" name="mlm" id="id_mlm" value="{{ current_mlm }}">
+          <button type="submit" class="btn btn-primary">Save changes</button>
+      </div>
+    </fieldset>
+  </form>
+{% else %}
+  <div class="alert alert-danger text-center" role="alert">
+    <span class="glyphicon glyphicon-exclamation-sign" aria-hidden="true"></span>
+    <span class="sr-only">Error:</span>
+    No match is found
+  </div>
+{% endif %}
+
+{% endblock %}
